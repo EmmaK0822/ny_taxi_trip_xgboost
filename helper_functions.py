@@ -1,6 +1,9 @@
 import json
 import requests
+import pandas as pd
 import numpy as np
+from math import radians, cos, sin, asin, sqrt
+
 
 def haversine_array(lat1, lng1, lat2, lng2):
     lat1, lng1, lat2, lng2 = map(np.radians, (lat1, lng1, lat2, lng2))
@@ -26,12 +29,9 @@ def bearing_array(lat1, lng1, lat2, lng2):
 
 def speed(w, h):
     """Return speed_table"""
-    conn = sqlite3.connect(db_path)
-    conn.row_factory = dict_factory
-    query = f"SELECT avg(speed) FROM speed_table WHERE weekday = '{w}' AND hour = '{h}'"
-    result = conn.execute(query).fetchall()
-    conn.close()
-    return result
+    df = pd.read_csv('db/avg_speed.csv')
+    avg_speed = df[(df['Weekday']==w) & (df['Hour']==h)]['speed_m']
+    return avg_speed
 
 def get_coordinate(pick, drop):
     pick_url = "https://nominatim.openstreetmap.org/search/" + pick + "?format=json"
@@ -49,10 +49,10 @@ def get_coordinate(pick, drop):
     d_lat = d_response[0]['lat']
     d_lng =  d_response[0]['lon']
     
-    coordinate = {'p_lat': p_lat,
-                  'p_lng': p_lng,
-                 'd_lat': d_lat,
-                  'd_lng': d_lng,
+    coordinate = {'p_lat': float(p_lat),
+                  'p_lng': float(p_lng),
+                 'd_lat': float(d_lat),
+                  'd_lng': float(d_lng),
                  }
     
     return coordinate

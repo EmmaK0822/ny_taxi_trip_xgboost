@@ -4,9 +4,10 @@
 import os.path
 import json
 import sqlite3
+from math import radians, cos, sin, asin, sqrt
 from helper_functions import speed, haversine_array, dummy_manhattan_distance, bearing_array, get_coordinate
-from datetime import datetime, date, time
-from init_db import speed_table
+import datetime
+from datetime import date
 
 import pandas as pd
 import numpy as np
@@ -19,17 +20,17 @@ from flask import Flask, jsonify, render_template, request, redirect
 #############
 # FLASK APP #
 #############
-app = Flask(__name__)
+application = Flask(__name__)
 
 ###############
 # MAIN ROUTES #
 ###############
-@app.route("/")
+@application.route("/")
 def index():
     """Return index page"""
     return render_template('index.html')
 
-@app.route("/send", methods=["GET", "POST"])
+@application.route("/send", methods=["GET", "POST"])
 def xgb():
     if request.method == "POST":
         """ Getting coordinates """
@@ -43,71 +44,83 @@ def xgb():
         dropoff_lat = coordinate['d_lat']
         dropoff_lng = coordinate['d_lng']
 
-        print(pickup_address)
-        print(dropoff_address)
+        print(p_address)
+        print(d_address)
+        print(coordinate)
         
         """ Getting date/time values """
         schedule = request.form["schedule"]
 
         if schedule == "now":
-            today = datetime.now()
-            date = today.weekday() # Return the day of the week as an integer, where Monday is 0 and Sunday is 6
-            hour = today.hour()
+            day = date.today()
+            week = day.weekday() # Return the day of the week as an integer, where Monday is 0 and Sunday is 6
+            now = datetime.datetime.now()
+            hr = now.hour
         else:
-            date = request.form["weekday"] # convert string to datetime
-            time = request.form["time"]
-            hour = time.hour()
-        
-        print(today)
-        print(date)
-        print(time)
+            week = request.form["weekday"] # convert string to datetime -> no need
+            time = request.form["time"] # confirm the value -> 02:03 PM (14%3A03)
+            hr = time[:1]
+
+        print(week)
+        print(hr)
 
         """ Data Preprocessing """
         distance = dummy_manhattan_distance(pickup_lat, pickup_lng, dropoff_lat, dropoff_lng)
-        speed = speed(date, hour)
+        avg_speed = speed(week, hr)
         direction = bearing_array(pickup_lat, pickup_lng, dropoff_lat, dropoff_lng)
+        
         """ Load the unique possibility training dataset """
-
-        train = # either load the unique dataset from csv or create a fake dataset
+        # either load the unique dataset from csv or create a fake dataset
+        train = pd.read_csv('db/avg_speed.csv')
 
         """ Creating dataframe to feed a model """
         test = pd.DataFrame({
-            'date': date,
-            'time': time,
-            'distance_m': distance,
+            'Weekday': week,
+            'Hour': hr,
+            'distance_dummy_manhattan': distance,
             'direction': direction,
-            'avg_speed_m': speed
-        })
+            'avg_speed_m': avg_speed
+        }, index=[168])
 
-        """ Concat """"
-        pd.concat([train, test])
+        """ Concat """
+        df = pd.concat([train, test])
 
         """ Dummfied """
-        pd.get_dummies
+        df = pd.get_dummies(df, columns=['Weekday', 'Hour'])
 
         """ Extract the test data """
-        test = df.iloc[-1]
+        test = df.iloc[[-1]]
+
+        """ """
+        test = test[['distance_dummy_manhattan', 'direction', 'avg_speed_m', 'Hour_0', 'Hour_1', 'Hour_2', 'Hour_3', 'Hour_4', 'Hour_5', 'Hour_6', 'Hour_7', 'Hour_8', 'Hour_9', 'Hour_10', 'Hour_11', 'Hour_12', 'Hour_13', 'Hour_14', 'Hour_15', 'Hour_16', 'Hour_17', 'Hour_18', 'Hour_19', 'Hour_20', 'Hour_21', 'Hour_22', 'Hour_23', 'Weekday_0', 'Weekday_1', 'Weekday_2', 'Weekday_3', 'Weekday_4', 'Weekday_5', 'Weekday_6']]
+        test_dmatrix = xgboost.DMatrix(test)
 
         """ Load the model """
-        model = pickle.load(open("ny_taxi.pickle.dat", "rb"))
+        model = pickle.load(open("db/new_model.pickle.dat", "rb"))
 
         """ Run the model """
-        prediction = model.predict(test)
+        prediction = model.predict(test_dmatrix)
+
+        pred = prediction[0]
 
         """ Option 2. Save the prediction to DB """
         # save the prediction and generate an unique ID
         # store the prediction and unique ID (maybe time) in DB
-        # 
 
-        return redirect(f"/result/{prediction}/{time}", code=302)
+        """ Redirect the route with values """
+        # example: redirect(f"/result/{prediction}/{time}/{speed}", code=302)
+        # app route should have same format: @app.route("/result/<prediction>/<time>/<speed>")
+        # use the value as input: def whateverfuction(prediction, time, speed)
 
-    return render_template("learn.html")    
+        return redirect(f"/result/{pred}", code=302)
+
+    return render_template("/")    
 
 
-@app.route("/result/<prediction>/<time>")
-def visualization(prediction, time):
-    """ Option 1. Using Jinja """"
-    results = {"pred": prediction}
+@application.route("/result/<pred>")
+def visualization(pred):
+    """ Option 1. Using Jinja """
+    results = {"pred": pred}
 
     """ Option 2. Query the prediction """ 
     ### how can I prevent multiple queries
@@ -115,31 +128,6 @@ def visualization(prediction, time):
     """Return the prediction"""
     return render_template('result.html', results=results)
 
-################################
-# INITIALIZE SPEED DATABASE #
-################################
-@app.before_first_request
-def init_db():
-    # check if db exists
-    db_exists = os.path.exists(db_path)
-    db_status = False
-
-    # if db and all tables exist, pass
-    if db_exists:
-        db_status = exists_table("speed", db_path) and exists_table(
-            "speedByTime", db_path)
-        if db_status:
-            pass
-        # if not all tables exist, remove db
-        else:
-            os.remove(db_path)
-
-    # if all tables exist, pass
-    if db_status:
-        pass
-    # else build db and all tables
-    else:
-        build_speed_table()
 
 if __name__ == "__main__":
-    app.run(debug=True, port=4996)
+    application.run(debug=True, port=4996)
