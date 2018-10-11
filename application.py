@@ -1,11 +1,9 @@
 ################
 # DEPENDENCIES #
 ################
-import os.path
+import os
 import json
-import sqlite3
-from math import radians, cos, sin, asin, sqrt
-from helper_functions import speed, haversine_array, dummy_manhattan_distance, bearing_array, get_coordinate
+from helper_functions import *
 import datetime
 from datetime import date
 
@@ -39,10 +37,10 @@ def xgb():
 
         coordinate = get_coordinate(p_address, d_address)
 
-        pickup_lat = coordinate['p_lat']
-        pickup_lng = coordinate['p_lng']
-        dropoff_lat = coordinate['d_lat']
-        dropoff_lng = coordinate['d_lng']
+        pickup_lat = float(coordinate['p_lat'])
+        pickup_lng = float(coordinate['p_lng'])
+        dropoff_lat = float(coordinate['d_lat'])
+        dropoff_lng = float(coordinate['d_lng'])
 
         print(p_address)
         print(d_address)
@@ -61,6 +59,9 @@ def xgb():
             time = request.form["time"] # confirm the value -> 02:03 PM (14%3A03)
             hr = time[:1]
 
+        week = int(week)
+        hr = int(hr)
+
         print(week)
         print(hr)
 
@@ -68,10 +69,14 @@ def xgb():
         distance = dummy_manhattan_distance(pickup_lat, pickup_lng, dropoff_lat, dropoff_lng)
         avg_speed = speed(week, hr)
         direction = bearing_array(pickup_lat, pickup_lng, dropoff_lat, dropoff_lng)
+
+        print(distance)
+        print(avg_speed)
+        print(direction)
         
         """ Load the unique possibility training dataset """
         # either load the unique dataset from csv or create a fake dataset
-        train = pd.read_csv('db/avg_speed.csv')
+        train = pd.read_csv(os.path.join('db', 'avg_speed.csv'))
 
         """ Creating dataframe to feed a model """
         test = pd.DataFrame({
@@ -83,25 +88,25 @@ def xgb():
         }, index=[168])
 
         """ Concat """
-        df = pd.concat([train, test])
+        df = pd.concat([train, test], sort=False)
 
         """ Dummfied """
         df = pd.get_dummies(df, columns=['Weekday', 'Hour'])
 
         """ Extract the test data """
-        test = df.iloc[[-1]]
+        test = df.iloc[[168]]
 
         """ """
         test = test[['distance_dummy_manhattan', 'direction', 'avg_speed_m', 'Hour_0', 'Hour_1', 'Hour_2', 'Hour_3', 'Hour_4', 'Hour_5', 'Hour_6', 'Hour_7', 'Hour_8', 'Hour_9', 'Hour_10', 'Hour_11', 'Hour_12', 'Hour_13', 'Hour_14', 'Hour_15', 'Hour_16', 'Hour_17', 'Hour_18', 'Hour_19', 'Hour_20', 'Hour_21', 'Hour_22', 'Hour_23', 'Weekday_0', 'Weekday_1', 'Weekday_2', 'Weekday_3', 'Weekday_4', 'Weekday_5', 'Weekday_6']]
         test_dmatrix = xgboost.DMatrix(test)
 
         """ Load the model """
-        model = pickle.load(open("db/new_model.pickle.dat", "rb"))
+        model = pickle.load(open(os.path.join("db","new_model.pickle.dat"), "rb"))
 
         """ Run the model """
         prediction = model.predict(test_dmatrix)
 
-        pred = prediction[0]
+        pred = int(np.exp(prediction[0]))
 
         """ Option 2. Save the prediction to DB """
         # save the prediction and generate an unique ID
@@ -120,7 +125,14 @@ def xgb():
 @application.route("/result/<pred>")
 def visualization(pred):
     """ Option 1. Using Jinja """
-    results = {"pred": pred}
+    pred_hour = int(pred) // 3600
+    pred_min = (int(pred) % 3600) // 60
+    pred_sec = (int(pred) % 3600) % 60
+
+    results = {"pred_h": pred_hour,
+                "pred_m": pred_min,
+                "pred_s": pred_sec}
+
 
     """ Option 2. Query the prediction """ 
     ### how can I prevent multiple queries
@@ -130,4 +142,4 @@ def visualization(pred):
 
 
 if __name__ == "__main__":
-    application.run(debug=True, port=4996)
+    application.run()

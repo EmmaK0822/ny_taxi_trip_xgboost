@@ -4,9 +4,83 @@
 	<title>NY Taxi Trip Duration</title>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<!--===============================================================================================-->
+	<link rel="icon" type="image/png" href="../static/images/icons/favicon.ico"/>
+	<!--===============================================================================================-->
+		<link rel="stylesheet" type="text/css" href="../static/vendor/bootstrap/css/bootstrap.min.css">
+	<!--===============================================================================================-->
+		<link rel="stylesheet" type="text/css" href="../static/fonts/font-awesome-4.7.0/css/font-awesome.min.css">
+	<!--===============================================================================================-->
+		<link rel="stylesheet" type="text/css" href="../static/fonts/iconic/css/material-design-iconic-font.min.css">
+	<!--===============================================================================================-->
+		<link rel="stylesheet" type="text/css" href="../static/vendor/animate/animate.css">
+	<!--===============================================================================================-->
+		<link rel="stylesheet" type="text/css" href="../static/vendor/css-hamburgers/hamburgers.min.css">
+	<!--===============================================================================================-->
+		<link rel="stylesheet" type="text/css" href="../static/vendor/animsition/css/animsition.min.css">
+	<!--===============================================================================================-->
+		<link rel="stylesheet" type="text/css" href="../static/vendor/select2/select2.min.css">
+	<!--===============================================================================================-->
+		<link rel="stylesheet" type="text/css" href="../static/vendor/daterangepicker/daterangepicker.css">
+	<!--===============================================================================================-->
+		<link rel="stylesheet" type="text/css" href="../static/vendor/noui/nouislider.min.css">
+	<!--===============================================================================================-->
+		<link rel="stylesheet" type="text/css" href="../static/css/util.css">
+		<link rel="stylesheet" type="text/css" href="../static/css/main.css">
+	<!--===============================================================================================-->
+
+</head>
 </head>
 <body>
-    <h1>This is our prediction</h1>
-    <p>{{ results.pred }}</p>
+	<div class="container-contact100">
+		<div class="wrap-contact100">
+			<span class="contact100-form-title">
+				Our prediction is ....
+			</span>
+			<div id="map" style="width:800px;height:400px;margin:10px"></div>
+			<div class="wrap-input100">
+				{% if results.pred_h > 0 %}
+					Your trip will take approximately {{ results.pred_h }} hr {{ results.pred_m }} min {{ results.pred_s }} sec
+				{% elif results.pred_m > 0 %}
+					Your trip will take approximately {{ results.pred_m }} min {{ results.pred_s }} sec
+				{% else %}
+				 Your trip will take approximately {{ results.pred_s }} sec
+				{% endif %}
+			</div>
+		</div>
+	</div>
+
+
+	<script>
+		function myMap() {
+			var mapOptions = {
+				center: new google.maps.LatLng(40.71, -74.00),
+				zoom: 10,
+				mapTypeId: google.maps.MapTypeId.HYBRID
+			}
+		var map = new google.maps.Map(document.getElementById("map"), mapOptions);
+		}
+	</script>
+
+	<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBE3Xgrj7kzjQP56OYVfgmiNKgZUjtShT0&callback=myMap"></script>
+<!--===============================================================================================-->
+	<script src="../static/vendor/jquery/jquery-3.2.1.min.js"></script>
+<!--===============================================================================================-->
+	<script src="../static/vendor/animsition/js/animsition.min.js"></script>
+<!--===============================================================================================-->
+	<script src="../static/vendor/bootstrap/js/popper.js"></script>
+	<script src="../static/vendor/bootstrap/js/bootstrap.min.js"></script>
+<!--===============================================================================================-->
+	<script src="../static/vendor/select2/select2.min.js"></script>
+<!--===============================================================================================-->
+	<script src="../static/vendor/daterangepicker/moment.min.js"></script>
+	<script src="../static/vendor/daterangepicker/daterangepicker.js"></script>
+<!--===============================================================================================-->
+	<script src="../static/vendor/countdowntime/countdowntime.js"></script>
+<!--===============================================================================================-->
+    <script src="../static/vendor/noui/nouislider.min.js"></script>
+	<script src="../static/js/main.js"></script>
+
+
 </body>
 </html>

@@ -1,3 +1,4 @@
+import os
 import json
 import requests
 import pandas as pd
@@ -29,8 +30,8 @@ def bearing_array(lat1, lng1, lat2, lng2):
 
 def speed(w, h):
     """Return speed_table"""
-    df = pd.read_csv('db/avg_speed.csv')
-    avg_speed = df[(df['Weekday']==w) & (df['Hour']==h)]['speed_m']
+    df = pd.read_csv(os.path.join('db','avg_speed.csv'))
+    avg_speed = df[(df['Weekday']==w) & (df['Hour']==h)]['speed_m'].values[0]
     return avg_speed
 
 def get_coordinate(pick, drop):
@@ -49,10 +50,10 @@ def get_coordinate(pick, drop):
     d_lat = d_response[0]['lat']
     d_lng =  d_response[0]['lon']
     
-    coordinate = {'p_lat': float(p_lat),
-                  'p_lng': float(p_lng),
-                 'd_lat': float(d_lat),
-                  'd_lng': float(d_lng),
+    coordinate = {'p_lat': p_lat,
+                  'p_lng': p_lng,
+                 'd_lat': d_lat,
+                  'd_lng': d_lng,
                  }
     
     return coordinate
